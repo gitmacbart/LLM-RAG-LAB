@@ -1,0 +1,12 @@
+ollama
+langchain
+langchain-community
+langchain-ollama
+langchain-chroma
+langchain-experimental
+langchain-agents
+chromadb
+sentence-transformers
+sqlalchemy
+streamlit
+python-dotenv
