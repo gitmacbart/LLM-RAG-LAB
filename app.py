@@ -7,7 +7,7 @@ import json
 import re
 
 # Initialize LLM
-llm = OllamaLLM(model="llama3.2:1b")  # Using smaller model for faster performance
+llm = OllamaLLM(model="llama3.2:latest")  # Using smaller model for faster performance
 
 # Update schema info on start
 vectorstore = update_schema_info()

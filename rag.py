@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 import os
 
 # Initialize embeddings
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+embeddings = OllamaEmbeddings(model="nomic-embed-text:latest")
 
 # Initialize Chroma client
 client = chromadb.PersistentClient(path="./chroma_db")

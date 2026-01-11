@@ -34,13 +34,13 @@ This project demonstrates an innovative approach to database interaction by repl
 
 ## Performance Notes
 
-The lab uses Llama 3.2 1B model for optimal performance while maintaining good language understanding. Response times are typically 2-5 seconds per query on modern hardware. For even faster performance, consider:
+The lab uses Llama 3.2 3B model for optimal performance while maintaining good language understanding. Response times are typically 3-8 seconds per query on modern hardware. For even faster performance, consider:
 
 - Using GPU acceleration if available (`ollama serve --gpu`)
 - Further reducing RAG retrieval results (k=1)
 - Implementing response caching for frequent queries
 
-**Recent Updates**: Fixed ACTION parsing to handle both `ACTION:` and `ANSWER:` response formats from the LLM, ensuring reliable execution of database operations like "show me all items".
+**Recent Updates**: Fixed ACTION parsing to handle both `ACTION:` and `ANSWER:` response formats from the LLM, ensuring reliable execution of database operations like "show me all items". Upgraded to Llama 3.2 3B model for better instruction following.
 
 ## Setup
 
@@ -49,8 +49,8 @@ The lab uses Llama 3.2 1B model for optimal performance while maintaining good l
 1. **Install Ollama**: Follow instructions at [https://ollama.ai/](https://ollama.ai/)
 2. **Pull Required Models**:
    ```bash
-   ollama pull llama3.2:1b
-   ollama pull nomic-embed-text
+   ollama pull llama3.2:latest
+   ollama pull nomic-embed-text:latest
    ```
 
 ### Installation
