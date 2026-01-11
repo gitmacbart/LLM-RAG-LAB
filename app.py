@@ -38,10 +38,10 @@ Available Actions:
 - update_quantity: Update quantity. Parameters: {{"item_id": number, "new_quantity": number}}
 
 CRITICAL INSTRUCTIONS:
-- For ANY action (add, list, update): Respond with ONLY: ACTION: action_name {parameters}
+- For ANY action (add, list, update): Respond with ONLY: ACTION: action_name followed by JSON parameters in curly braces
 - For questions/info: Respond with ONLY: ANSWER: your response
 - NEVER mix formats or add extra text
-- ALWAYS include proper JSON parameters
+- ALWAYS include proper JSON parameters with curly braces
 
 Examples:
 User: "add a laptop" 
