@@ -40,6 +40,8 @@ The lab uses Llama 3.2 1B model for optimal performance while maintaining good l
 - Further reducing RAG retrieval results (k=1)
 - Implementing response caching for frequent queries
 
+**Recent Updates**: Fixed ACTION parsing to handle both `ACTION:` and `ANSWER:` response formats from the LLM, ensuring reliable execution of database operations like "show me all items".
+
 ## Setup
 
 ### Prerequisites
