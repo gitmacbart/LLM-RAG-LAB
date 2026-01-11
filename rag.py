@@ -52,6 +52,6 @@ def update_schema_info():
     vectorstore.add_documents(docs)
     return vectorstore
 
-def retrieve_relevant_info(vectorstore, query, k=3):
+def retrieve_relevant_info(vectorstore, query, k=2):
     """Retrieve relevant schema info for a query."""
     return vectorstore.similarity_search(query, k=k)

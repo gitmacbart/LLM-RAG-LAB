@@ -8,7 +8,7 @@ This project demonstrates an innovative approach to database interaction by repl
 
 ## Architecture
 
-- **LLM Engine**: Ollama with Llama 3.2 model for natural language processing
+- **LLM Engine**: Ollama with Llama 3.2 1B model for fast, local natural language processing
 - **Embeddings**: Nomic Embed Text for semantic search
 - **Vector Database**: ChromaDB for storing and retrieving schema/action information
 - **Relational Database**: SQLite for persistent inventory data
@@ -32,6 +32,14 @@ This project demonstrates an innovative approach to database interaction by repl
   - Privacy-preserving (all data stays local)
   - Offline-capable
 
+## Performance Notes
+
+The lab uses Llama 3.2 1B model for optimal performance while maintaining good language understanding. Response times are typically 2-5 seconds per query on modern hardware. For even faster performance, consider:
+
+- Using GPU acceleration if available (`ollama serve --gpu`)
+- Further reducing RAG retrieval results (k=1)
+- Implementing response caching for frequent queries
+
 ## Setup
 
 ### Prerequisites
@@ -39,7 +47,7 @@ This project demonstrates an innovative approach to database interaction by repl
 1. **Install Ollama**: Follow instructions at [https://ollama.ai/](https://ollama.ai/)
 2. **Pull Required Models**:
    ```bash
-   ollama pull llama3.2
+   ollama pull llama3.2:1b
    ollama pull nomic-embed-text
    ```
 
@@ -69,9 +77,34 @@ This project demonstrates an innovative approach to database interaction by repl
 1. Open your browser to `http://localhost:8501`
 2. Start chatting with the system using natural language queries like:
    - "Add a laptop to electronics with quantity 5"
-   - "Show me all items in the electronics category"
+   - "Show me all items"
    - "Update the quantity of item 1 to 10"
-   - "What items do we have?"
+   - "What items do we have in electronics?"
+
+## Testing
+
+The application comes pre-loaded with sample data. Try these test queries:
+
+### Basic Operations
+- **List all items**: "show me all items" or "list all items"
+- **Add new item**: "add a gaming mouse with quantity 3 in electronics category"
+- **Update quantity**: "update item 1 to quantity 10"
+- **Filter by category**: "show electronics items" or "list items in stationery"
+
+### Sample Data
+The system initializes with these items:
+- Laptop (Gaming laptop, Qty: 5, Electronics)
+- Book (Python programming guide, Qty: 10, Education)  
+- Mouse (Wireless mouse, Qty: 15, Electronics)
+- Notebook (Spiral notebook, Qty: 20, Stationery)
+
+### Debug Information
+The chat interface shows debug output including:
+- Raw LLM responses
+- Parsed actions and parameters
+- Execution results
+
+This helps understand how the RAG system interprets your queries and executes database operations.
 
 ## Project Structure
 

@@ -7,10 +7,23 @@ import json
 import re
 
 # Initialize LLM
-llm = OllamaLLM(model="llama3.2")  # Assuming user has this model
+llm = OllamaLLM(model="llama3.2:1b")  # Using smaller model for faster performance
 
 # Update schema info on start
 vectorstore = update_schema_info()
+
+# Ensure sample data exists
+session = Session()
+if session.query(Item).count() == 0:
+    sample_items = [
+        Item(name="Laptop", description="Gaming laptop", quantity=5, category="Electronics"),
+        Item(name="Book", description="Python programming guide", quantity=10, category="Education"),
+        Item(name="Mouse", description="Wireless mouse", quantity=15, category="Electronics"),
+        Item(name="Notebook", description="Spiral notebook", quantity=20, category="Stationery"),
+    ]
+    session.add_all(sample_items)
+    session.commit()
+session.close()
 
 # Define prompt
 prompt_template = """
@@ -21,18 +34,22 @@ Database Schema:
 
 Available Actions:
 - add_item: Add a new item. Parameters: name (string), description (string, optional), quantity (integer, default 0), category (string)
-- list_items: List items. Parameters: category (string, optional)
+- list_items: List items. Parameters: category (string, optional) - use {{}} for all items
 - update_quantity: Update quantity of an item. Parameters: item_id (integer), new_quantity (integer)
 
-User Query: {query}
+IMPORTANT: You MUST respond with EXACTLY one of these formats:
+For actions: ACTION: <action_name> <json_parameters>
+For questions: ANSWER: <your_answer>
 
-If the query is a request to perform an action, respond with ACTION: <action_name> <json_parameters>
-Otherwise, respond with a helpful message.
+User Query: {query}
 
 Examples:
 - "Add a laptop" -> ACTION: add_item {{"name": "laptop", "quantity": 1}}
 - "List all items" -> ACTION: list_items {{}}
 - "Update item 1 to 5" -> ACTION: update_quantity {{"item_id": 1, "new_quantity": 5}}
+- "How many items are there?" -> ANSWER: There are X items in the database.
+
+Respond with ACTION or ANSWER format only. For list_items, always include parameters even if empty.
 """
 
 prompt = PromptTemplate.from_template(prompt_template)
@@ -82,30 +99,41 @@ if prompt_text := st.chat_input("Ask something..."):
         st.markdown(prompt_text)
 
     # Retrieve relevant info
-    relevant_docs = retrieve_relevant_info(vectorstore, prompt_text)
+    relevant_docs = retrieve_relevant_info(vectorstore, prompt_text, k=2)
     context = "\n".join([doc.page_content for doc in relevant_docs])
 
     # Generate response
     full_prompt = prompt.format(context=context, query=prompt_text)
     response = llm.invoke(full_prompt)
 
-    # Check if it's an action
-    action_match = re.match(r"ACTION:\s*(\w+)\s*(\{.*\})", response.strip())
-    if action_match:
-        action_name = action_match.group(1)
-        params = json.loads(action_match.group(2))
-        if action_name == "add_item":
-            result = add_item(**params)
-        elif action_name == "list_items":
-            result = list_items(**params)
-        elif action_name == "update_quantity":
-            result = update_quantity(**params)
-        else:
-            result = "Unknown action"
-        response = result
+    # Debug: show raw response
+    st.write(f"Debug - Raw LLM response: {response}")
+
+    # Check if it's an action or answer
+    # First check for ACTION or ANSWER with action anywhere in the response
+    action_search = re.search(r"(?:ACTION|ANSWER):\s*(\w+)\s*(\{.*?\})?", response)
+    if action_search:
+        action_name = action_search.group(1)
+        params_str = action_search.group(2) if action_search.group(2) else "{}"
+        try:
+            params = json.loads(params_str)
+            if action_name == "add_item":
+                result = add_item(**params)
+            elif action_name == "list_items":
+                result = list_items(**params)
+            elif action_name == "update_quantity":
+                result = update_quantity(**params)
+            else:
+                result = "Unknown action"
+            response = result
+        except json.JSONDecodeError:
+            response = "Invalid action parameters"
     else:
-        # Normal response
-        pass
+        # Check for ANSWER
+        answer_match = re.match(r"ANSWER:\s*(.*)", response.strip(), re.DOTALL)
+        if answer_match:
+            response = answer_match.group(1).strip()
+        # else keep original response
 
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
