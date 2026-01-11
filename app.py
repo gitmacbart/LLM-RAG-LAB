@@ -33,24 +33,31 @@ Database Schema:
 {context}
 
 Available Actions:
-- add_item: Add a new item. Parameters: name (string), description (string, optional), quantity (integer, default 0), category (string)
-- list_items: List items. Parameters: category (string, optional) - use {{}} for all items
-- update_quantity: Update quantity of an item. Parameters: item_id (integer), new_quantity (integer)
+- add_item: Add a new item. Parameters: {{"name": "string", "description": "string", "quantity": number, "category": "string"}}
+- list_items: List items. Parameters: {{}} or {{"category": "string"}}
+- update_quantity: Update quantity. Parameters: {{"item_id": number, "new_quantity": number}}
 
-IMPORTANT: You MUST respond with EXACTLY one of these formats:
-For actions: ACTION: <action_name> <json_parameters>
-For questions: ANSWER: <your_answer>
-
-User Query: {query}
+CRITICAL INSTRUCTIONS:
+- For ANY action (add, list, update): Respond with ONLY: ACTION: action_name {parameters}
+- For questions/info: Respond with ONLY: ANSWER: your response
+- NEVER mix formats or add extra text
+- ALWAYS include proper JSON parameters
 
 Examples:
-- "Add a laptop" -> ACTION: add_item {{"name": "laptop", "quantity": 1}}
-- "List all items" -> ACTION: list_items {{}}
-- "Update item 1 to 5" -> ACTION: update_quantity {{"item_id": 1, "new_quantity": 5}}
-- "How many items are there?" -> ANSWER: There are X items in the database.
+User: "add a laptop" 
+Response: ACTION: add_item {{"name": "laptop", "quantity": 1}}
 
-Respond with ACTION or ANSWER format only. For list_items, always include parameters even if empty.
-"""
+User: "show all items"
+Response: ACTION: list_items {{}}
+
+User: "update item 1 to 5"
+Response: ACTION: update_quantity {{"item_id": 1, "new_quantity": 5}}
+
+User: "how many items?"
+Response: ANSWER: There are 4 items in the database.
+
+User Query: {query}
+Response:"""
 
 prompt = PromptTemplate.from_template(prompt_template)
 
@@ -110,30 +117,59 @@ if prompt_text := st.chat_input("Ask something..."):
     st.write(f"Debug - Raw LLM response: {response}")
 
     # Check if it's an action or answer
-    # First check for ACTION or ANSWER with action anywhere in the response
-    action_search = re.search(r"(?:ACTION|ANSWER):\s*(\w+)\s*(\{.*?\})?", response)
-    if action_search:
-        action_name = action_search.group(1)
-        params_str = action_search.group(2) if action_search.group(2) else "{}"
-        try:
-            params = json.loads(params_str)
-            if action_name == "add_item":
+    # Look for known action patterns in the response
+    response_lower = response.lower()
+
+    # Check for add_item action
+    if "add_item" in response_lower:
+        add_match = re.search(r'add_item\s*(\{.*?\})', response, re.IGNORECASE)
+        if add_match:
+            params_str = add_match.group(1)
+            try:
+                params = json.loads(params_str)
                 result = add_item(**params)
-            elif action_name == "list_items":
+                response = result
+            except (json.JSONDecodeError, TypeError):
+                response = "Invalid parameters for add_item"
+        else:
+            response = "Missing parameters for add_item"
+
+    # Check for list_items action
+    elif "list_items" in response_lower:
+        list_match = re.search(r'list_items\s*(\{.*?\})', response, re.IGNORECASE)
+        if list_match:
+            params_str = list_match.group(1)
+            try:
+                params = json.loads(params_str)
                 result = list_items(**params)
-            elif action_name == "update_quantity":
-                result = update_quantity(**params)
-            else:
-                result = "Unknown action"
+                response = result
+            except (json.JSONDecodeError, TypeError):
+                result = list_items()  # Default to list all
+                response = result
+        else:
+            result = list_items()  # Default to list all
             response = result
-        except json.JSONDecodeError:
-            response = "Invalid action parameters"
+
+    # Check for update_quantity action
+    elif "update_quantity" in response_lower:
+        update_match = re.search(r'update_quantity\s*(\{.*?\})', response, re.IGNORECASE)
+        if update_match:
+            params_str = update_match.group(1)
+            try:
+                params = json.loads(params_str)
+                result = update_quantity(**params)
+                response = result
+            except (json.JSONDecodeError, TypeError):
+                response = "Invalid parameters for update_quantity"
+        else:
+            response = "Missing parameters for update_quantity"
+
     else:
-        # Check for ANSWER
-        answer_match = re.match(r"ANSWER:\s*(.*)", response.strip(), re.DOTALL)
+        # Check for ANSWER format
+        answer_match = re.search(r'ANSWER:\s*(.*)', response, re.IGNORECASE | re.DOTALL)
         if answer_match:
             response = answer_match.group(1).strip()
-        # else keep original response
+        # If no known pattern, keep original response
 
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
